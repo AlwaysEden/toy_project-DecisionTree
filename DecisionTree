@@ -1,0 +1,45 @@
+import numpy as np
+import pandas as pd
+
+#데이터 불러오기
+data = pd.read_csv('/content/hyundi.csv')
+
+#데이터 전처리(One and hot으로 문자열로 구성된 특성 서로 구분시켜줌)
+data = pd.get_dummies(data, columns=['model', 'transmission', 'fuelType'] )
+
+#train_set and test_set 분류
+input = data.drop('price',axis = 1)
+target = data['price']
+from sklearn.model_selection import train_test_split
+train_input, test_input, train_target, test_target = train_test_split(input, target, test_size = 0.2)
+
+#결정트리 알고리즘으로 학습
+from sklearn.tree import DecisionTreeRegressor
+regressor = DecisionTreeRegressor(max_depth=4)
+regressor.fit(train_input,train_target)
+print(regressor.score(train_input, train_target))
+print(regressor.score(test_input, test_target))
+
+#노드 확인해보기
+import matplotlib.pyplot as plt
+from sklearn.tree import plot_tree
+plt.figure(figsize=(10,7))
+plot_tree(regressor, max_depth = 1, filled =True)
+plt.show()
+
+#과대적합 방지를 위한 GridSearchCV 사용
+from sklearn.model_selection import GridSearchCV
+params = {'min_impurity_decrease': np.arange(0.0001, 0.001, 0.0001),
+          'max_depth': range(5,20,1),
+          'min_samples_split':range(2,100,10)
+          }
+gs = GridSearchCV(regressor,params, n_jobs=-1)
+gs.fit(train_input,train_target)
+
+#결정계수확인
+dt = gs.best_estimator_
+print(dt.score(train_input, train_target))
+
+print(gs.score(train_input, train_target))
+print(gs.score(test_input,test_target))
+
